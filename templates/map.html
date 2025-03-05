@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My College Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map { height: 500px; width: 100%; }
+    </style>
+    <script>
+        function fetchSensorData() {
+    fetch("/get-data")  // Fetch sensor data from Flask API
+        .then(response => response.json())
+        .then(data => {
+            // Check if data exists and extract the first available dustbin data
+            let firstDustbin = Object.keys(data)[0]; // Get the first dustbin key
+
+            if (firstDustbin) {
+                let distance = data[firstDustbin].distance || "No Data";
+                let battery = data[firstDustbin].battery || "No Data";
+
+                // Update the popup text
+                document.getElementById('sensor-data').innerText = distance + " cm";
+                document.getElementById('battery-level').innerText = battery + "%";
+            }
+        })
+        .catch(error => console.error("Error fetching data:", error));
+}
+
+// Refresh sensor data every 5 seconds
+setInterval(fetchSensorData, 5000);
+
+    </script>
+</head>
+<body>
+
+    <h2>My College Map</h2>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map and set the view to your college location
+        var map = L.map('map').setView([17.98304, 79.53168], 17);
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add a marker for the collegehttps://www.openstreetmap.org/#map=18/17.984376/79.529745
+        L.marker([17.98304, 79.53168]).addTo(map)
+        .bindPopup("<b>Dustbin_no.</b><br>Distance: <span id='sensor-data'>Loading...</span> cm<br>Battery: <span id='battery-level'>Loading...</span>%")
+        L.marker([17.984376, 79.529745]).addTo(map)
+        .bindPopup("<b>Dustbin_no.</b><br>Distance: <span id='sensor-data'>Loading...</span> cm<br>Battery: <span id='battery-level'>Loading...</span>%")
+
+
+    </script>
+
+</body>
+</html>
