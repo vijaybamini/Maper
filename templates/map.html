@@ -7,27 +7,44 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         #map { height: 500px; width: 100%; }
-    </style>
-    <script>
-        function fetchSensorData() {
-            fetch("/get-data")  // Fetch data from Flask API
-                .then(response => response.json())
-                .then(data => {
-                    let percentage = data.percentage || "No Data";  // Get percentage
-
-                    // Update the popup text
-                    document.getElementById('fill-level').innerText = percentage + "%";
-                })
-                .catch(error => console.error("Error fetching data:", error));
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-
-        // Refresh sensor data every 5 seconds
-        setInterval(fetchSensorData, 5000);
-    </script>
+        .popup-container {
+            text-align: center;
+            width: 140px; /* Adjusted width for better centering */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .progress-bar {
+            width: 110px; /* Moved a bit right */
+            height: 15px;
+            background-color: #ddd;
+            border-radius: 7px;
+            overflow: hidden;
+            border: 1px solid #bbb;
+            position: relative;
+        }
+        .progress {
+            height: 100%;
+            width: 0%;
+            background-color: #4caf50;
+            transition: width 0.2s ease-in-out;
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 15px;
+        }
+    </style>
 </head>
 <body>
-
-    <h2>My College Map</h2>
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -39,13 +56,45 @@
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // Add marker for Dustbin No. 32
-        L.marker([17.98304, 79.53168]).addTo(map)
-            .bindPopup("<b>Dustbin No. 32</b><br>Fill Level: <span id='fill-level'>Loading...</span>%");
+        // Custom popup content (Adjusted for centering)
+        var popupContent = `
+            <div class="popup-container">
+                <b>Dustbin 32</b>
+                <div class="progress-bar">
+                    <div class="progress" id="progress">0%</div>
+                </div>
+            </div>
+        `;
 
-        // Fetch data on page load
+        var marker = L.marker([17.98304, 79.53168]).addTo(map);
+        marker.bindPopup(popupContent).openPopup(); // Keep popup always open
+
+        function updatePopup(percentage) {
+            let progress = document.getElementById("progress");
+
+            // Ensure valid range
+            percentage = Math.max(0, Math.min(100, percentage));
+
+            progress.style.width = percentage + "%";
+            progress.innerText = percentage + "%";
+        }
+
+        function fetchSensorData() {
+            fetch("/get-data")
+                .then(response => response.json())
+                .then(data => {
+                    let percentage = data.percentage || 0;
+                    updatePopup(percentage);
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                    updatePopup(0); // Show empty bar on error
+                });
+        }
+
+        // Fetch data every 5 seconds
         fetchSensorData();
+        setInterval(fetchSensorData, 5000);
     </script>
-
 </body>
 </html>
