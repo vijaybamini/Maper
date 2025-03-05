@@ -20,7 +20,8 @@ else:
 
 @app.route("/")
 def index():
-    return render_template("index.html")  # Your HTML file
+   return render_template("map.html")  # Updated to match your new file name
+
 
 @app.route("/get-data")
 def get_data():

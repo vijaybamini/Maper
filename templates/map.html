@@ -8,30 +8,6 @@
     <style>
         #map { height: 500px; width: 100%; }
     </style>
-    <script>
-        function fetchSensorData() {
-    fetch("/get-data")  // Fetch sensor data from Flask API
-        .then(response => response.json())
-        .then(data => {
-            // Check if data exists and extract the first available dustbin data
-            let firstDustbin = Object.keys(data)[0]; // Get the first dustbin key
-
-            if (firstDustbin) {
-                let distance = data[firstDustbin].distance || "No Data";
-                let battery = data[firstDustbin].battery || "No Data";
-
-                // Update the popup text
-                document.getElementById('sensor-data').innerText = distance + " cm";
-                document.getElementById('battery-level').innerText = battery + "%";
-            }
-        })
-        .catch(error => console.error("Error fetching data:", error));
-}
-
-// Refresh sensor data every 5 seconds
-setInterval(fetchSensorData, 5000);
-
-    </script>
 </head>
 <body>
 
@@ -40,7 +16,7 @@ setInterval(fetchSensorData, 5000);
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Initialize the map and set the view to your college location
+        // Initialize the map and set the view
         var map = L.map('map').setView([17.98304, 79.53168], 17);
 
         // Add OpenStreetMap tile layer
@@ -48,13 +24,43 @@ setInterval(fetchSensorData, 5000);
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // Add a marker for the collegehttps://www.openstreetmap.org/#map=18/17.984376/79.529745
-        L.marker([17.98304, 79.53168]).addTo(map)
-        .bindPopup("<b>Dustbin_no.</b><br>Distance: <span id='sensor-data'>Loading...</span> cm<br>Battery: <span id='battery-level'>Loading...</span>%")
-        L.marker([17.984376, 79.529745]).addTo(map)
-        .bindPopup("<b>Dustbin_no.</b><br>Distance: <span id='sensor-data'>Loading...</span> cm<br>Battery: <span id='battery-level'>Loading...</span>%")
+        // Define dustbins with locations
+        var dustbins = {
+            "dustbin_1": { coords: [17.98304, 79.53168], marker: null },
+            "dustbin_2": { coords: [17.984376, 79.529745], marker: null }
+        };
 
+        // Create markers for each dustbin
+        Object.keys(dustbins).forEach(dustbin => {
+            let location = dustbins[dustbin].coords;
+            let marker = L.marker(location).addTo(map)
+                .bindPopup(`<b>${dustbin}</b><br>
+                    Distance: <span id='${dustbin}-distance'>Loading...</span> cm<br>
+                    Battery: <span id='${dustbin}-battery'>Loading...</span>%`);
+            dustbins[dustbin].marker = marker;
+        });
 
+        // Function to fetch sensor data
+        function fetchSensorData() {
+            fetch("/get-data")  // Fetch from Flask API
+                .then(response => response.json())
+                .then(data => {
+                    Object.keys(dustbins).forEach(dustbin => {
+                        if (data[dustbin]) {
+                            let distance = data[dustbin].distance || "No Data";
+                            let battery = data[dustbin].battery || "No Data";
+
+                            // Update the corresponding popup text
+                            document.getElementById(`${dustbin}-distance`).innerText = distance;
+                            document.getElementById(`${dustbin}-battery`).innerText = battery;
+                        }
+                    });
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+
+        // Refresh sensor data every 5 seconds
+        setInterval(fetchSensorData, 5000);
     </script>
 
 </body>
