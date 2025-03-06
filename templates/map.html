@@ -15,108 +15,85 @@
             flex-direction: column;
             align-items: center;
         }
-        .marker-container {
-            position: relative;
-            width: 50px;
-            height: 50px;
-        }
-        .circular-progress {
-            position: absolute;
-            top: -30px;
-            left: -5px;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: conic-gradient(
-                #4caf50 0deg, #4caf50 0%, #ddd 0%, #ddd 360deg
-            );
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            font-size: 12px;
-            color: black;
-        }
-        .dustbin-number {
-            position: absolute;
-            top: 45px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-weight: bold;
-            font-size: 12px;
-        }
-         /* Top Navigation Boxes */
-         .horizontal {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .box {
-        
-            background-color: #fff;
-            color: black;
-            font-weight: bold;
-            display: flex;
-            width: 120px;
-            height: 40px;
-            justify-content: center;
-            align-items: center;
-            border-radius: 8px;
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-            text-decoration: none;
-        }
-        .box:hover {
+
+        .progress-bar {
+            width: 100px;
+            height: 15px;
             background-color: #ddd;
+            border-radius: 7px;
+            overflow: hidden;
+            border: 1px solid #bbb;
+            position: relative;
         }
 
+        .progress {
+            height: 100%;
+            width: 0%;
+            background-color: #4caf50; /* Default green */
+            transition: width 0.2s ease-in-out, background-color 0.3s;
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 15px;
+        }
+
+        .leaflet-popup-content {
+            margin: 1px;
+            padding: 2px;
+            padding-top: 4px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <div class="horizontal">
-        <a href="https://dustbinmonitor.onrender.com/" class="box"><div> Data </div></a>
-     <a href="https://maper-9sth.onrender.com" class="box"><div> Maps </div></a>
-    </div>
-
     <div id="map"></div>
+
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         var map = L.map('map').setView([17.98304, 79.53168], 17);
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        function createCustomMarker(lat, lon, percentage, dustbinNo) {
-            let color = percentage >= 90 ? 'red' : '#4caf50';
-            let gradient = `conic-gradient(${color} 0deg, ${color} ${percentage}%, #ddd ${percentage}%, #ddd 360deg)`;
-            
-            let customIcon = L.divIcon({
-                className: 'marker-container',
-                html: `
-                    <div class='circular-progress' style='background: ${gradient};'>${percentage}%</div>
-                    <div class='dustbin-number'>${dustbinNo}</div>
-                `,
-                iconSize: [50, 50],
-                iconAnchor: [25, 25]
-            });
-            return L.marker([lat, lon], { icon: customIcon }).addTo(map);
+        var marker = L.marker([17.98304, 79.53168]).addTo(map);
+
+        function getPopupContent(percentage) {
+            return `
+                <div style="text-align: center; width: 120px;">
+                    <div class="progress-bar">
+                        <div class="progress" style="width:${percentage}%; background-color: ${percentage >= 90 ? 'red' : '#4caf50'}">
+                            ${percentage}%
+                        </div>
+                    </div>
+                    <b>32</b>
+                </div>
+            `;
         }
-        
-        var marker = createCustomMarker(17.98304, 79.53168, 0, 32);
-        
+
+        marker.bindPopup(getPopupContent(0)).openPopup(); // Start with 0%
+
+        function updatePopup(percentage) {
+            percentage = Math.max(0, Math.min(100, percentage)); // Ensure within range
+            marker.setPopupContent(getPopupContent(percentage)); // Update dynamically
+        }
+
         function fetchSensorData() {
             fetch("/get-data")
                 .then(response => response.json())
                 .then(data => {
-                    let percentage = Math.min(data.percentage || 0, 100);
-                    map.removeLayer(marker);
-                    marker = createCustomMarker(17.98304, 79.53168, percentage, 32);
+                    let percentage = data.percentage || 0;
+                    updatePopup(percentage);
                 })
-                .catch(error => console.error("Error fetching data:", error));
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                    updatePopup(0);
+                });
         }
-        
-        setInterval(fetchSensorData, 5000);
+
         fetchSensorData();
+        setInterval(fetchSensorData, 5000);
     </script>
 </body>
 </html>

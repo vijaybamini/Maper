@@ -26,21 +26,20 @@ def index():
 def get_data():
     """Fetches the latest fill level for Dustbin No. 32."""
     ref = db.reference("data")  # Reference to "data" node
-    data = ref.get()
+    data = ref.order_by_key().limit_to_last(1).get()  # Fetch only the latest entry
 
     if not data:
-        return jsonify({"error": "No data found"}), 404  # Handle empty database
+        return jsonify({"percentage": 0})  # Return 0 if no data found
 
-    latest_percentage = "No data"  # Default if no data is found
+    latest_entry = list(data.values())[0]  # Extract the latest data
 
-    # ✅ Extract the latest percentage for Dustbin No. 32
-    for key in sorted(data.keys(), reverse=True):  # Sort keys to get latest first
-        entry = data[key]
-        if entry.get("dustbin_no") == 32:  # Check if it's for Dustbin 32
-            latest_percentage = entry.get("percentage", "No data")
-            break  # Stop after finding the latest entry
+    # Check if the latest entry belongs to Dustbin 32
+    if latest_entry.get("dustbin_no") == 32:
+        latest_percentage = latest_entry.get("percentage", 0)
+    else:
+        latest_percentage = 0  # Return 0 if Dustbin 32 data is missing
 
-    return jsonify({"percentage": latest_percentage})  # Return only one value
+    return jsonify({"percentage": latest_percentage})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
