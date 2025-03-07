@@ -40,10 +40,44 @@
     background: #000000;
    
 }
+.horizontal {
+            display: flex;
+            gap: 20px;
+            margin: 20px;
+
+        }
+        .box {
+           
+            background-color: #fff;
+            color: black;
+            font-weight: bold;
+            display: flex;
+            width: 120px;
+            height: 40px;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+        .box:hover {
+            background-color: #ddd;
+        }
+        a{
+            text-decoration:none;
+        }
 
     </style>
 </head>
 <body>
+    <img src="/static/Nitw_logo.png" height="60" width="200" style="align-self: flex-start;">
+    <h1>DUSTBIN MONITORING SYTEM</h1>
+    <div class="horizontal">
+        <a href="https://dustbinmonitor.onrender.com/"><div class="box"> Data </div></a>
+       <a href="https://maper-9sth.onrender.com"><div class="box"> Maps </div></a>
+      
+    </div>
+    
     <div id="map"></div>
 
     <script>
@@ -63,13 +97,13 @@ function createMarkerWithSpeedometer(dustbin_no, coords) {
     let markerHtml = `
         <div style="
             position: relative;
-            width: 60px; height: 70px;
+            width: 60px; height: 80px;
             text-align: center;
         ">
             <!-- Circular Progress Bar (Speedometer) -->
            <svg viewBox="0 0 36 36" width="50" height="50" style="
     position: absolute;
-    top: -30px;
+    top: -50px;
     left: 50%;
     transform: translateX(-50%);
 ">
