@@ -54,39 +54,86 @@
 
     <script>
         var map = L.map('map').setView([17.984196, 79.531958], 17);
-
+    
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
-
+    
         var dustbins = {
             "32": { "coords": [17.984397, 79.529581], "color": "green" },
             "35": { "coords": [17.984196, 79.531958], "color": "green" },
             "36": { "coords": [17.982449, 79.529514], "color": "red" },
             "37": { "coords": [17.985305, 79.532411], "color": "grey" }
         };
-
+    
+        // ✅ Function to create dustbin marker with speedometer
         function createMarker(dustbin_no, coords, color) {
             let markerHtml = `
                 <div style="position: relative; width: 60px; height: 80px; text-align: center;">
+                    <svg viewBox="0 0 36 36" width="50" height="50" style="
+                        position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
+                    ">
+                        <circle cx="18" cy="18" r="15" fill="none" stroke="#ddd" stroke-width="3"/>
+                        <circle id="progress-${dustbin_no}" cx="18" cy="18" r="15" fill="none"
+                            stroke="#4caf50" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2"
+                            transform="rotate(-90 18 18)" />
+                        <text id="progress-text-${dustbin_no}" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+                            font-size="8px" fill="#000">
+                            0%
+                        </text>
+                    </svg>
                     <img src="/static/${color}_dustbin.jpg" style="width: 100%; height:70px; display: block;">
                 </div>
             `;
-
+    
             let icon = L.divIcon({
                 className: 'custom-marker',
                 html: markerHtml,
-                iconSize: [32, 80],
-                iconAnchor: [30, 35],
+                iconSize: [26, 80], 
+                iconAnchor: [30, 35], 
             });
-
+    
             return L.marker(coords, { icon }).addTo(map);
         }
-
+    
+        // ✅ Create markers for all dustbins
         for (let bin in dustbins) {
             let { coords, color } = dustbins[bin];
             dustbins[bin].marker = createMarker(bin, coords, color);
         }
+    
+        // ✅ Function to update speedometer progress
+        function updateSpeedometer(dustbin_no, percentage) {
+            let circle = document.getElementById(`progress-${dustbin_no}`);
+            let text = document.getElementById(`progress-text-${dustbin_no}`);
+    
+            if (circle && text) {
+                percentage = Math.max(0, Math.min(100, percentage)); 
+    
+                let progress = 94.2 - (percentage / 100) * 94.2; 
+                circle.style.strokeDashoffset = progress; 
+                circle.style.stroke = (percentage >= 90) ? 'red' : '#4caf50'; 
+                text.innerText = `${percentage}%`;
+            }
+        }
+    
+        // ✅ Function to fetch sensor data and update speedometers
+        function fetchSensorData() {
+            fetch("/get-data")
+                .then(response => response.json())
+                .then(data => {
+                    for (let dustbin_no in data) {
+                        let latest_percentage = data[dustbin_no] || 0;
+                        updateSpeedometer(dustbin_no, latest_percentage);
+                    }
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+    
+        // Fetch and update every 5 seconds
+        fetchSensorData();
+        setInterval(fetchSensorData, 5000);
     </script>
+    
 </body>
 </html>
