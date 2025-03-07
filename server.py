@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, jsonify
 import firebase_admin
 from firebase_admin import credentials, db
@@ -37,7 +38,8 @@ def get_data():
         if isinstance(records, dict):  # Ensure records exist
             latest_key = max(records.keys(), default=None)  # Find latest key
             if latest_key:
-                result[dustbin_no] = {latest_key: {"percentage": records[latest_key].get("percentage", 0)}}
+                latest_percentage = records[latest_key].get("percentage", 0)
+                result[dustbin_no] = latest_percentage  # Store only percentage
 
     return jsonify(result)
 
