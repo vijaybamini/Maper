@@ -37,7 +37,7 @@
     line-height: 15px;
 }
 .hello{
-    background: #4caf50;
+    background: #000000;
    
 }
 
@@ -74,10 +74,10 @@ function createMarkerWithSpeedometer(dustbin_no, coords) {
     transform: translateX(-50%);
 ">
     <!-- Background circle -->
-    <circle cx="18" cy="18" r="15" fill="none" stroke="#ddd" stroke-width="3"/>
+    <circle cx="18" cy="18" r="15" fill="none" stroke="#000000" stroke-width="3"/>
     <!-- Progress circle -->
     <circle id="progress-${dustbin_no}" cx="18" cy="18" r="15" fill="none"
-        stroke="#4caf50" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2"
+        stroke="#213fff" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2"
         transform="rotate(-90 18 18)" />
     <!-- ✅ Text displaying percentage -->
     <text id="progress-text-${dustbin_no}" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
