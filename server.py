@@ -24,22 +24,22 @@ def index():
 
 @app.route("/get-data")
 def get_data():
-    """Fetches the latest fill level for Dustbin No. 32."""
+    """Fetches the latest fill level for all dustbins."""
     ref = db.reference("data")  # Reference to "data" node
-    data = ref.order_by_key().limit_to_last(1).get()  # Fetch only the latest entry
+    data = ref.get()  # Fetch all dustbin data
 
     if not data:
-        return jsonify({"percentage": 0})  # Return 0 if no data found
+        return jsonify({})  # Return empty object if no data found
 
-    latest_entry = list(data.values())[0]  # Extract the latest data
+    result = {}
 
-    # Check if the latest entry belongs to Dustbin 32
-    if latest_entry.get("dustbin_no") == 32:
-        latest_percentage = latest_entry.get("percentage", 0)
-    else:
-        latest_percentage = 0  # Return 0 if Dustbin 32 data is missing
+    for dustbin_no, records in data.items():
+        if isinstance(records, dict):  # Ensure records exist
+            latest_key = max(records.keys(), default=None)  # Find latest key
+            if latest_key:
+                result[dustbin_no] = {latest_key: {"percentage": records[latest_key].get("percentage", 0)}}
 
-    return jsonify({"percentage": latest_percentage})
+    return jsonify(result)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

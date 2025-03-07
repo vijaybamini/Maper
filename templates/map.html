@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NITW</title>
+    <title>My College Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <style>
         #map { height: 500px; width: 100%; }
         body {
@@ -15,30 +16,6 @@
             flex-direction: column;
             align-items: center;
         }
-
-        .horizontal {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .box {
-            background-color: #fff;
-            color: black;
-            font-weight: bold;
-            display: flex;
-            width: 120px;
-            height: 40px;
-            justify-content: center;
-            align-items: center;
-            border-radius: 8px;
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-            text-decoration: none;
-        }
-        .box:hover {
-            background-color: #ddd;
-        }
-
         .progress-bar {
             width: 100px;
             height: 15px;
@@ -48,76 +25,78 @@
             border: 1px solid #bbb;
             position: relative;
         }
-
         .progress {
             height: 100%;
             width: 0%;
             background-color: #4caf50;
-            transition: width 0.2s ease-in-out, background-color 0.3s;
+            transition: width 0.2s ease-in-out;
             text-align: center;
             color: white;
             font-size: 12px;
             font-weight: bold;
             line-height: 15px;
         }
-
-        .leaflet-popup-content {
-            margin: 1px;
-            padding: 2px;
-            padding-top: 4px;
-            font-size: 14px;
-        }
     </style>
 </head>
 <body>
-    <div class="horizontal">
-        <a href="https://dustbinmonitor.onrender.com/" class="box">Data</a>
-        <a href="https://maper-9sth.onrender.com" class="box">Maps</a>
-    </div>
-
     <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        var map = L.map('map').setView([17.98304, 79.53168], 17);
-        
+        var map = L.map('map').setView([17.984196, 79.531958], 17);
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        var marker = L.marker([17.98304, 79.53168]).addTo(map);
+        var dustbins = {
+            "32": { "coords": [17.984397, 79.529581], "marker": null },
+            "35": { "coords": [17.984196, 79.531958], "marker": null }
+        };
 
-        function getPopupContent(percentage) {
-            return `
+        function createMarker(dustbin_no, coords) {
+            let popupContent = `
                 <div style="text-align: center; width: 120px;">
                     <div class="progress-bar">
-                        <div class="progress" style="width:${percentage}%; background-color: ${percentage >= 90 ? 'red' : '#4caf50'}">
-                            ${percentage}%
-                        </div>
+                        <div class="progress" id="progress-${dustbin_no}">0%</div>
                     </div>
-                    <b>32</b>
+                    <b>Dustbin ${dustbin_no}</b>
                 </div>
             `;
+            let marker = L.marker(coords).addTo(map);
+            marker.bindPopup(popupContent).openPopup();
+            return marker;
         }
 
-        marker.bindPopup(getPopupContent(0)).openPopup();
+        for (let bin in dustbins) {
+            dustbins[bin].marker = createMarker(bin, dustbins[bin].coords);
+        }
 
-        function updatePopup(percentage) {
+        function updatePopup(dustbin_no, percentage) {
+            let progress = document.getElementById(`progress-${dustbin_no}`);
+            if (!progress) {
+                console.error("Progress bar not found for dustbin:", dustbin_no);
+                return;
+            }
             percentage = Math.max(0, Math.min(100, percentage));
-            marker.setPopupContent(getPopupContent(percentage));
+            progress.style.width = percentage + "%";
+            progress.innerText = percentage + "%";
+            progress.style.backgroundColor = (percentage >= 90) ? 'red' : '#4caf50';
         }
 
         function fetchSensorData() {
-            fetch("/get-data")
+            fetch("https://yourserver.com/get-data")  // Replace with actual Flask server URL
                 .then(response => response.json())
                 .then(data => {
-                    let percentage = data.percentage || 0;
-                    updatePopup(percentage);
+                    for (let dustbin_no in data) {
+                        let entries = data[dustbin_no];
+                        if (Object.keys(entries).length > 0) {
+                            let latest_key = Object.keys(entries).sort().pop();
+                            let latest_percentage = entries[latest_key]?.percentage || 0;
+                            updatePopup(dustbin_no, latest_percentage);
+                        }
+                    }
                 })
-                .catch(error => {
-                    console.error("Error fetching data:", error);
-                    updatePopup(0);
-                });
+                .catch(error => console.error("Error fetching data:", error));
         }
 
         fetchSensorData();
