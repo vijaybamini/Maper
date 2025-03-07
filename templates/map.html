@@ -39,7 +39,7 @@
         }
         a{
             text-decoration:none;
-            background-color:;
+            background-color:
         }
     </style>
 </head>
@@ -94,8 +94,18 @@
                 iconSize: [20, 80], 
                 iconAnchor: [30, 35], 
             });
-    
-            return L.marker(coords, { icon }).addTo(map);
+           
+let marker= L.marker(coords, { icon }).addTo(map);
+marker.bindPopup(`
+    <b>Dustbin ${dustbin_no}</b><br>
+   
+    Fill Level: <span id="popup-percentage-${dustbin_no}">0%</span><br>
+    Last Updated: <span id="popup-time-${dustbin_no}">-</span>
+`);
+
+
+return marker;
+
         }
     
         // ✅ Create markers for all dustbins
