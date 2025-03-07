@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, jsonify
 import firebase_admin
 from firebase_admin import credentials, db
@@ -35,20 +34,20 @@ def get_data():
     result = {}
 
     for dustbin_no, records in data.items():
-    if isinstance(records, dict):  # Ensure records exist
-        latest_key = max(records.keys(), default=None)  # Find latest key
-        if latest_key and isinstance(records[latest_key], dict):  # Ensure valid data
-            latest_percentage = records[latest_key].get("percentage", 0)
+        if isinstance(records, dict):  # ✅ Proper indentation
+            latest_key = max(records.keys(), default=None)  # Find latest key
+            if latest_key and isinstance(records[latest_key], dict):  # Ensure valid data
+                latest_percentage = records[latest_key].get("percentage", 0)
 
-            if isinstance(latest_percentage, (int, float)):  # Check if it's a number
-                if latest_percentage > 100 or latest_percentage < 0:
-                    latest_percentage = 100  # If out of range, set to 100
-            else:
-                latest_percentage = "No data"  # If data is invalid
+                if isinstance(latest_percentage, (int, float)):  # Check if it's a number
+                    if latest_percentage > 100 or latest_percentage < 0:
+                        latest_percentage = 100  # If out of range, set to 100
+                else:
+                    latest_percentage = "No data"  # If data is invalid
 
-            result[dustbin_no] = latest_percentage  # Store only percentage
+                result[dustbin_no] = latest_percentage  # Store only percentage
 
-return jsonify(result)  # ✅ Ensure this is outside the loop
+    return jsonify(result)  # ✅ Ensure this is outside the loop
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
