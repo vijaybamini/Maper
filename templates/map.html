@@ -36,6 +36,10 @@
     font-weight: bold;
     line-height: 15px;
 }
+.hello{
+    background: #4caf50;
+   
+}
 
     </style>
 </head>
@@ -54,47 +58,39 @@ var dustbins = {
     "35": { "coords": [17.984196, 79.531958], "marker": null }
 };
 
-// ✅ Function to create marker with Image + Progress Bar
-function createMarkerWithProgress(dustbin_no, coords) {
+// ✅ Function to create marker with Image + Circular Progress Bar
+function createMarkerWithSpeedometer(dustbin_no, coords) {
     let markerHtml = `
         <div style="
             position: relative;
-            width: 50px; height: 60px;
+            width: 60px; height: 70px;
             text-align: center;
         ">
-            <!-- Dustbin Image -->
-            <img src="/static/green_dustbin.png" style="width: 100%; height: 50px; display: block;">
-            
-            <!-- Progress Bar Overlay -->
-            <div style="
-                width: 50px; height: 8px;
-                background: #ddd;
-                border-radius: 5px;
-                border: 1px solid #bbb;
+            <!-- Circular Progress Bar (Speedometer) -->
+            <svg viewBox="0 0 36 36" width="40" height="40" style="
                 position: absolute;
-                bottom: 0;
-                left: 50%;
+                top: -5px; left: 50%;
                 transform: translateX(-50%);
             ">
-                <div id="progress-${dustbin_no}" style="
-                    width: 0%; height: 100%;
-                    background: #4caf50;
-                    text-align: center;
-                    font-size: 7px;
-                    color: white;
-                    line-height: 8px;
-                    border-radius: 5px;
-                    transition: width 0.3s ease-in-out;
-                ">0%</div>
-            </div>
+                <circle cx="18" cy="18" r="15" fill="none" stroke="#ddd" stroke-width="3"/>
+                <circle id="progress-${dustbin_no}" cx="18" cy="18" r="15" fill="none" 
+                    stroke="#4caf50" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2"
+                    transform="rotate(-90 18 18)" />
+                <text x="18" y="21" font-size="7px" font-weight="bold" text-anchor="middle" id="text-${dustbin_no}">
+                    0%
+                </text>
+            </svg>
+
+            <!-- Dustbin Image -->
+            <img src="/static/green_dustbin.png" style="width: 100%; height: 50px; display: block;">
         </div>
     `;
 
     let icon = L.divIcon({
         className: 'custom-marker',
         html: markerHtml,
-        iconSize: [50, 60], // Size of the marker
-        iconAnchor: [25, 30], // Positioning on map
+        iconSize: [60, 70], // Size of the marker
+        iconAnchor: [30, 35], // Positioning on map
     });
 
     return L.marker(coords, { icon }).addTo(map);
@@ -102,28 +98,34 @@ function createMarkerWithProgress(dustbin_no, coords) {
 
 // ✅ Create markers for all dustbins
 for (let bin in dustbins) {
-    dustbins[bin].marker = createMarkerWithProgress(bin, dustbins[bin].coords);
+    dustbins[bin].marker = createMarkerWithSpeedometer(bin, dustbins[bin].coords);
 }
 
-// ✅ Function to update progress bar
-function updateProgressBar(dustbin_no, percentage) {
-    let progress = document.getElementById(`progress-${dustbin_no}`);
-    if (progress) {
-        percentage = Math.max(0, Math.min(100, percentage)); // Keep between 0-100
-        progress.style.width = percentage + "%";
-        progress.innerText = percentage + "%";
-        progress.style.backgroundColor = (percentage >= 90) ? 'red' : '#4caf50';
+// ✅ Function to update speedometer progress
+function updateSpeedometer(dustbin_no, percentage) {
+    let circle = document.getElementById(`progress-${dustbin_no}`);
+    let text = document.getElementById(`text-${dustbin_no}`);
+
+    if (circle && text) {
+        percentage = Math.max(0, Math.min(100, percentage)); // Ensure between 0-100
+
+        // Convert percentage to circular progress value
+        let progress = 94.2 - (percentage / 100) * 94.2; // 94.2 is full stroke
+
+        circle.style.strokeDashoffset = progress; // Update stroke
+        circle.style.stroke = (percentage >= 90) ? 'red' : '#4caf50'; // Change color
+        text.innerText = `${percentage}%`; // Update text
     }
 }
 
-// ✅ Fetch sensor data and update progress bars
+// ✅ Fetch sensor data and update speedometers
 function fetchSensorData() {
     fetch("/get-data")
         .then(response => response.json())
         .then(data => {
             for (let dustbin_no in data) {
                 let latest_percentage = data[dustbin_no] || 0;
-                updateProgressBar(dustbin_no, latest_percentage);
+                updateSpeedometer(dustbin_no, latest_percentage);
             }
         })
         .catch(error => console.error("Error fetching data:", error));
@@ -132,6 +134,7 @@ function fetchSensorData() {
 // Fetch and update every 5 seconds
 fetchSensorData();
 setInterval(fetchSensorData, 5000);
+
 
     </script>
     
