@@ -44,77 +44,95 @@
 
     <script>
         var map = L.map('map').setView([17.984196, 79.531958], 17);
-    
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-    
-        var dustbins = {
-            "32": { "coords": [17.984397, 79.529581], "marker": null },
-            "35": { "coords": [17.984196, 79.531958], "marker": null }
-        };
-    
-        var dustbinIcon = L.icon({
-            iconUrl: '/static/green_dustbin.png', // Custom marker icon
-            iconSize: [32, 50],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -30]
-        });
-    
-        function createMarker(dustbin_no, coords) {
-            let popupContent = `
-                <div style="text-align: center; width: 120px;">
-                    <div class="progress-bar">
-                        <div class="progress" id="progress-${dustbin_no}">0%</div>
-                    </div>
-                    <b>Dustbin ${dustbin_no}</b>
-                </div>
-            `;
-            let marker = L.marker(coords, { icon: dustbinIcon }).addTo(map); // ✅ Use custom icon
-            marker.bindPopup(popupContent);
-            return marker;
-        }
-    
-        // Create markers with custom icons
-        for (let bin in dustbins) {
-            dustbins[bin].marker = createMarker(bin, dustbins[bin].coords);
-        }
-    
-        function updatePopup(dustbin_no, percentage) {
-            let progress = document.getElementById(`progress-${dustbin_no}`);
-            if (progress) {
-                percentage = Math.max(0, Math.min(100, percentage)); // Ensure percentage is between 0-100
-                progress.style.width = percentage + "%";
-                progress.innerText = percentage + "%";
-                progress.style.backgroundColor = (percentage >= 90) ? 'red' : '#4caf50';
-    
-                // ✅ Update marker popup dynamically
-                let newPopupContent = `
-                    <div style="text-align: center; width: 120px;">
-                        <div class="progress-bar">
-                            <div class="progress" id="progress-${dustbin_no}" style="width: ${percentage}%;">${percentage}%</div>
-                        </div>
-                        <b>Dustbin ${dustbin_no}</b>
-                    </div>
-                `;
-                dustbins[dustbin_no].marker.setPopupContent(newPopupContent);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+var dustbins = {
+    "32": { "coords": [17.984397, 79.529581], "marker": null },
+    "35": { "coords": [17.984196, 79.531958], "marker": null }
+};
+
+// ✅ Function to create marker with Image + Progress Bar
+function createMarkerWithProgress(dustbin_no, coords) {
+    let markerHtml = `
+        <div style="
+            position: relative;
+            width: 50px; height: 60px;
+            text-align: center;
+        ">
+            <!-- Dustbin Image -->
+            <img src="/static/green_dustbin.png" style="width: 100%; height: 50px; display: block;">
+            
+            <!-- Progress Bar Overlay -->
+            <div style="
+                width: 50px; height: 8px;
+                background: #ddd;
+                border-radius: 5px;
+                border: 1px solid #bbb;
+                position: absolute;
+                bottom: 0;
+                left: 50%;
+                transform: translateX(-50%);
+            ">
+                <div id="progress-${dustbin_no}" style="
+                    width: 0%; height: 100%;
+                    background: #4caf50;
+                    text-align: center;
+                    font-size: 7px;
+                    color: white;
+                    line-height: 8px;
+                    border-radius: 5px;
+                    transition: width 0.3s ease-in-out;
+                ">0%</div>
+            </div>
+        </div>
+    `;
+
+    let icon = L.divIcon({
+        className: 'custom-marker',
+        html: markerHtml,
+        iconSize: [50, 60], // Size of the marker
+        iconAnchor: [25, 30], // Positioning on map
+    });
+
+    return L.marker(coords, { icon }).addTo(map);
+}
+
+// ✅ Create markers for all dustbins
+for (let bin in dustbins) {
+    dustbins[bin].marker = createMarkerWithProgress(bin, dustbins[bin].coords);
+}
+
+// ✅ Function to update progress bar
+function updateProgressBar(dustbin_no, percentage) {
+    let progress = document.getElementById(`progress-${dustbin_no}`);
+    if (progress) {
+        percentage = Math.max(0, Math.min(100, percentage)); // Keep between 0-100
+        progress.style.width = percentage + "%";
+        progress.innerText = percentage + "%";
+        progress.style.backgroundColor = (percentage >= 90) ? 'red' : '#4caf50';
+    }
+}
+
+// ✅ Fetch sensor data and update progress bars
+function fetchSensorData() {
+    fetch("/get-data")
+        .then(response => response.json())
+        .then(data => {
+            for (let dustbin_no in data) {
+                let latest_percentage = data[dustbin_no] || 0;
+                updateProgressBar(dustbin_no, latest_percentage);
             }
-        }
-    
-        function fetchSensorData() {
-            fetch("/get-data")
-                .then(response => response.json())
-                .then(data => {
-                    for (let dustbin_no in data) {
-                        let latest_percentage = data[dustbin_no] || 0;
-                        updatePopup(dustbin_no, latest_percentage);
-                    }
-                })
-                .catch(error => console.error("Error fetching data:", error));
-        }
-    
-        fetchSensorData();
-        setInterval(fetchSensorData, 5000);
+        })
+        .catch(error => console.error("Error fetching data:", error));
+}
+
+// Fetch and update every 5 seconds
+fetchSensorData();
+setInterval(fetchSensorData, 5000);
+
     </script>
     
 </body>
