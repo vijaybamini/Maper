@@ -26,75 +26,96 @@
             position: relative;
         }
         .progress {
-            height: 100%;
-            width: 0%;
-            background-color: #4caf50;
-            transition: width 0.2s ease-in-out;
-            text-align: center;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            line-height: 15px;
-        }
+    height: 100%;
+    width: 0%;
+    background-color: #4caf50;
+    transition: none;  /* Remove transition */
+    text-align: center;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 15px;
+}
+
     </style>
 </head>
 <body>
     <div id="map"></div>
 
     <script>
-    var map = L.map('map').setView([17.984196, 79.531958], 17);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    var dustbins = {
-        "32": { "coords": [17.984397, 79.529581], "marker": null },
-        "35": { "coords": [17.984196, 79.531958], "marker": null }
-    };
-
-    function createMarker(dustbin_no, coords) {
-        let popupContent = `
-            <div style="text-align: center; width: 120px;">
-                <div class="progress-bar">
-                    <div class="progress" id="progress-${dustbin_no}">0%</div>
+        var map = L.map('map').setView([17.984196, 79.531958], 17);
+    
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+    
+        var dustbins = {
+            "32": { "coords": [17.984397, 79.529581], "marker": null },
+            "35": { "coords": [17.984196, 79.531958], "marker": null }
+        };
+    
+        var dustbinIcon = L.icon({
+            iconUrl: '/static/green_dustbin.png', // Custom marker icon
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -30]
+        });
+    
+        function createMarker(dustbin_no, coords) {
+            let popupContent = `
+                <div style="text-align: center; width: 120px;">
+                    <div class="progress-bar">
+                        <div class="progress" id="progress-${dustbin_no}">0%</div>
+                    </div>
+                    <b>Dustbin ${dustbin_no}</b>
                 </div>
-                <b>Dustbin ${dustbin_no}</b>
-            </div>
-        `;
-        let marker = L.marker(coords).addTo(map);
-        marker.bindPopup(popupContent).openPopup();
-        return marker;
-    }
-
-    for (let bin in dustbins) {
-        dustbins[bin].marker = createMarker(bin, dustbins[bin].coords);
-    }
-
-    function updatePopup(dustbin_no, percentage) {
-        let progress = document.getElementById(`progress-${dustbin_no}`);
-        if (progress) {
-            percentage = Math.max(0, Math.min(100, percentage)); // Ensure between 0-100
-            progress.style.width = percentage + "%";
-            progress.innerText = percentage + "%";
-            progress.style.backgroundColor = (percentage >= 90) ? 'red' : '#4caf50';
+            `;
+            let marker = L.marker(coords, { icon: dustbinIcon }).addTo(map); // ✅ Use custom icon
+            marker.bindPopup(popupContent);
+            return marker;
         }
-    }
-
-    function fetchSensorData() {
-        fetch("/get-data")
-            .then(response => response.json())
-            .then(data => {
-                for (let dustbin_no in data) {
-                    let latest_percentage = data[dustbin_no] || 0;
-                    updatePopup(dustbin_no, latest_percentage);
-                }
-            })
-            .catch(error => console.error("Error fetching data:", error));
-    }
-
-    fetchSensorData();
-    setInterval(fetchSensorData, 5000);
+    
+        // Create markers with custom icons
+        for (let bin in dustbins) {
+            dustbins[bin].marker = createMarker(bin, dustbins[bin].coords);
+        }
+    
+        function updatePopup(dustbin_no, percentage) {
+            let progress = document.getElementById(`progress-${dustbin_no}`);
+            if (progress) {
+                percentage = Math.max(0, Math.min(100, percentage)); // Ensure percentage is between 0-100
+                progress.style.width = percentage + "%";
+                progress.innerText = percentage + "%";
+                progress.style.backgroundColor = (percentage >= 90) ? 'red' : '#4caf50';
+    
+                // ✅ Update marker popup dynamically
+                let newPopupContent = `
+                    <div style="text-align: center; width: 120px;">
+                        <div class="progress-bar">
+                            <div class="progress" id="progress-${dustbin_no}" style="width: ${percentage}%;">${percentage}%</div>
+                        </div>
+                        <b>Dustbin ${dustbin_no}</b>
+                    </div>
+                `;
+                dustbins[dustbin_no].marker.setPopupContent(newPopupContent);
+            }
+        }
+    
+        function fetchSensorData() {
+            fetch("/get-data")
+                .then(response => response.json())
+                .then(data => {
+                    for (let dustbin_no in data) {
+                        let latest_percentage = data[dustbin_no] || 0;
+                        updatePopup(dustbin_no, latest_percentage);
+                    }
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+    
+        fetchSensorData();
+        setInterval(fetchSensorData, 5000);
     </script>
+    
 </body>
 </html>
