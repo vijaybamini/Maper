@@ -66,7 +66,7 @@
             "37": { "coords": [17.985305, 79.532411], "color": "grey" }
         };
     
-        // ✅ Function to create dustbin marker with speedometer
+        // ✅ Function to create a marker with a speedometer
         function createMarker(dustbin_no, coords, color) {
             let markerHtml = `
                 <div style="position: relative; width: 60px; height: 80px; text-align: center;">
@@ -77,8 +77,8 @@
                         <circle id="progress-${dustbin_no}" cx="18" cy="18" r="15" fill="none"
                             stroke="#4caf50" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="94.2"
                             transform="rotate(-90 18 18)" />
-                        <text id="progress-text-${dustbin_no}" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
-                            font-size="8px" fill="#000">
+                        <text id="progress-text-${dustbin_no}" x="18" y="20" text-anchor="middle"
+                            font-size="6px" fill="#000">
                             0%
                         </text>
                     </svg>
@@ -89,7 +89,7 @@
             let icon = L.divIcon({
                 className: 'custom-marker',
                 html: markerHtml,
-                iconSize: [26, 80], 
+                iconSize: [32, 80], 
                 iconAnchor: [30, 35], 
             });
     
@@ -102,18 +102,18 @@
             dustbins[bin].marker = createMarker(bin, coords, color);
         }
     
-        // ✅ Function to update speedometer progress
+        // ✅ Function to update the speedometer progress
         function updateSpeedometer(dustbin_no, percentage) {
             let circle = document.getElementById(`progress-${dustbin_no}`);
             let text = document.getElementById(`progress-text-${dustbin_no}`);
     
             if (circle && text) {
-                percentage = Math.max(0, Math.min(100, percentage)); 
+                percentage = Math.max(0, Math.min(100, percentage));  // Ensure valid range
     
-                let progress = 94.2 - (percentage / 100) * 94.2; 
+                let progress = 94.2 - (percentage / 100) * 94.2; // Update stroke offset
                 circle.style.strokeDashoffset = progress; 
                 circle.style.stroke = (percentage >= 90) ? 'red' : '#4caf50'; 
-                text.innerText = `${percentage}%`;
+                text.textContent = `${percentage}%`; // Update percentage number
             }
         }
     
